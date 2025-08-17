@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>NASA Images</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+      :root{
+        /* tweak these two to change size/shape */
+        --tile-min: 240px;     /* minimum width of a tile */
+        --tile-ratio: 1;     /* 1 for squares, 16/9, 3/2, etc. */
+
+        --gap: 12px;
+        --radius: 12px;
+        --badge-bg: rgba(0,0,0,.55);
+        --badge-color: #fff;
+        --badge-pad: 6px 10px;
+      }
+
+      body { font-family: system-ui, Arial, sans-serif; margin: 2rem; }
+      .controls { margin-bottom: 1rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+      input[type="date"] { padding: 0.4rem; }
+      button { padding: 0.5rem 0.8rem; cursor: pointer; }
+
+      /* grid */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr));
+        gap: var(--gap);
+      }
+
+      /* tile */
+      .tile {
+        position: relative;
+        border-radius: var(--radius);
+        overflow: hidden;
+        aspect-ratio: var(--tile-ratio);
+        background: #eee;
+        display: block; /* so <a> behaves like a block tile */
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .tile img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* gradient to improve text contrast */
+      .tile::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 42%;
+        background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,0));
+        pointer-events: none;
+      }
+
+      /* date badge */
+      .badge {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        background: var(--badge-bg);
+        color: var(--badge-color);
+        padding: var(--badge-pad);
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: .2px;
+      }
+
+      /* optional: small hover lift */
+      .tile:hover { transform: translateY(-2px); transition: transform .12s ease; }
+
+      .flash { padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+      .success { background: #e9f8ee; border: 1px solid #bfe6c9; }
+      .danger  { background: #fdeaea; border: 1px solid #f5bcbc; }
+    </style>
+  </head>
+  <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <h1>NASA Images</h1>
+
+    <form class="controls" method="post" action="/fetch">
+      <label for="date">Fetch by date (optional):</label>
+      <input type="date" id="date" name="date">
+      <button type="submit">Fetch</button>
+    </form>
+
+    <div class="grid">
+      {% for e in entries %}
+        {% set src = e.local_path and url_for('static', filename=e.local_path) or e.url %}
+        {% if src %}
+          <a class="tile" href="{{ src }}" target="_blank" rel="noreferrer" title="{{ e.title }}">
+            <img src="{{ src }}" alt="{{ e.title }}" loading="lazy" decoding="async">
+            <div class="badge">{{ (e.date or '')[:10] }}</div>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </body>
+</html>
